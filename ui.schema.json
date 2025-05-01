@@ -5,19 +5,28 @@
     "schema",
     "user",
     "password",
-    "trinoOptions"
+    "prestoOptions"
   ],
   "password": {
-    "ui:widget": "password"
+    "ui:widget": "password",
+     "ui:help": "Password for authentication"
   },
   "server": {
-    "ui:help": "Trino server location i.e. http://localhost:8080"
+    "ui:help": "Presto server address (e.g. http://localhost:8080, https://presto.example.com:443)"
   },
-  "trinoOptions": {
-    "ssl": {
-      "rejectUnauthorized": {
-        "ui:help": "Disable SSL verification"
-      }
+  "catalog": {
+    "ui:help": "Default catalog to use"
+  },
+  "schema": {
+    "ui:help": "Default schema to use"
+  },
+  "user": {
+    "ui:help": "Username for authentication"
+  },
+  "prestoOptions": {
+    "ui:help": "Additional Presto connection options",
+    "timezone": {
+      "ui:help": "Timezone for the session (default: Asia/Seoul)"
     }
   }
 }

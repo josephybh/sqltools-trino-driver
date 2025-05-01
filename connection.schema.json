@@ -23,20 +23,14 @@
       "type": "string",
       "minLength": 1
     },
-    "trinoOptions": {
+    "prestoOptions": {
       "type": "object",
-      "title": "Trino Options",
+      "title": "Presto Options",
       "properties": {
-        "ssl": {
-          "type": "object",
-          "title": "SSL",
-          "properties": {
-            "rejectUnauthorized": {
-              "title": "Reject Unauthorized",
-              "type": "boolean",
-              "default": true
-            }
-          }
+        "timezone": {
+          "title": "Timezone",
+          "type": "string",
+          "default": "Asia/Seoul"
         }
       }
     }

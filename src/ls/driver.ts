@@ -11,37 +11,67 @@ import {
 import { v4 as generateId } from "uuid";
 import { QueryResult } from "./types";
 import { QueryParser } from "./parser";
-import { BasicAuth, ConnectionOptions, QueryData, Trino } from "trino-client";
+import * as presto from "presto-client";
 
-type DriverLib = Trino;
+type DriverLib = presto.Client;
 type DriverOptions = any;
 
-export default class TrinoDriver
+export default class PrestoDriver
   extends AbstractDriver<DriverLib, DriverOptions>
   implements IConnectionDriver
 {
   queries = queries;
 
-  public async open(): Promise<Trino> {
+  public async open(): Promise<presto.Client> {
     if (this.connection) {
       return this.connection;
     }
 
-    const connOptions: ConnectionOptions = {
-      server: this.credentials.server,
-      catalog: this.credentials.catalog,
-      schema: this.credentials.schema,
-      source: "sqltools-driver",
-      auth: new BasicAuth(this.credentials.user, this.credentials.password),
-      ssl: this.credentials.trinoOptions?.ssl, 
+    const { server, catalog, schema, user, password, prestoOptions = {} } = this.credentials;
+    
+    // URL 형식 처리
+    let hostUrl = server;
+    
+    // URL에 프로토콜이 포함되어 있지 않은 경우 기본값으로 http:// 추가
+    if (!hostUrl.startsWith('http://') && !hostUrl.startsWith('https://')) {
+      hostUrl = `http://${hostUrl}`;
+    }
+
+    // 호스트와 포트 분리
+    let host = '';
+    let port = 8080;
+    
+    try {
+      const url = new URL(hostUrl);
+      host = url.hostname;
+      port = url.port ? parseInt(url.port, 10) : (url.protocol === 'https:' ? 443 : 8080);
+    } catch (urlError) {
+      return Promise.reject(urlError);
+    }
+
+    // SSL 옵션 설정
+    let ssl = null;
+    if (hostUrl.startsWith('https://')) {
+      ssl = {
+        rejectUnauthorized: false
+      };
+    }
+
+    const clientOptions = {
+      host,
+      port,
+      user,
+      catalog,
+      schema,
+      source: 'sqltools-driver',
+      basic_auth: password ? { user, password } : null,
+      ssl,
+      checkInterval: prestoOptions.checkInterval || 800,
+      timezone: prestoOptions.timezone || 'Asia/Seoul'
     };
 
-    try {
-      const conn = Trino.create(connOptions);
-      this.connection = Promise.resolve(conn);
-    } catch (error) {
-      return Promise.reject(error);
-    }
+    const conn = new presto.Client(clientOptions);
+    this.connection = Promise.resolve(conn);
 
     return this.connection;
   }
@@ -76,33 +106,63 @@ export default class TrinoDriver
     };
   };
 
-  private async executeQuery(db: Trino, query: string): Promise<QueryResult> {
-    const empty: QueryResult = {} as QueryResult;
-    return (await db.query(query)).fold(empty, (qr, acc) => {
-      if (qr.error) {
-        return {
-          error: new Error(qr.error.message),
-        };
-      }
+  private executeQuery(db: presto.Client, query: string): Promise<QueryResult> {
+    return new Promise((resolve, reject) => {
+      const columns = [];
+      const rows = [];
 
-      if (!acc.columns || acc.columns.length == 0) {
-        acc.columns = (qr.columns ?? []).map(
-          (c) =>
-            <{ name: string; type: string }>{
-              name: c.name,
-              type: c.type,
-            }
-        );
-      }
-
-      const rows = (qr.data ?? []).map((row: QueryData[]) => {
-        const data = {};
-        row.forEach((value, idx) => (data[acc.columns[idx].name] = value));
-        return data;
+      db.execute({
+        query,
+        schema: this.credentials.schema,
+        catalog: this.credentials.catalog,
+        timezone: this.credentials.prestoOptions?.timezone,
+        
+        columns: (err, data) => {
+          if (err) {
+            reject({ error: err });
+            return;
+          }
+          
+          data.forEach(col => {
+            columns.push({
+              name: col.name,
+              type: col.type
+            });
+          });
+        },
+        
+        data: (err, data) => {
+          if (err) {
+            reject({ error: err });
+            return;
+          }
+          
+          if (data && columns.length > 0) {
+            data.forEach(rowData => {
+              const row = {};
+              rowData.forEach((value, colIndex) => {
+                if (colIndex < columns.length) {
+                  row[columns[colIndex].name] = value;
+                }
+              });
+              rows.push(row);
+            });
+          }
+        },
+        
+        error: (err) => {
+          reject({
+            error: err instanceof Error ? err : new Error(String(err))
+          });
+        },
+        
+        success: () => {
+          resolve({
+            columns,
+            rows
+          });
+        }
       });
-      acc.rows = acc.rows ? [...acc.rows, ...rows] : rows;
-
-      return acc;
     });
   }
 

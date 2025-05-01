@@ -6,7 +6,7 @@
   "configurations": [
     {
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
-      "name": "Launch Trino Extension",
+      "name": "Launch Presto Extension",
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "request": "launch",
       "type": "extensionHost"

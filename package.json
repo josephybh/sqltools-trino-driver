@@ -1,20 +1,20 @@
 {
-  "name": "sqltools-trino-driver",
-  "displayName": "Trino Driver",
-  "description": "Trino Driver for SQLTools",
-  "version": "0.2.13",
+  "name": "sqltools-presto-driver",
+  "displayName": "Presto Driver",
+  "description": "Presto Driver for SQLTools",
+  "version": "0.2.14",
   "engines": {
     "vscode": "^1.84.0"
   },
-  "publisher": "regadas",
+  "publisher": "combineads",
   "license": "MIT",
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/regadas/sqltools-trino-driver.git"
+    "url": "https://github.com/combineads/sqltools-presto-driver.git"
   },
   "bugs": {
-    "url": "https://github.com/regadas/sqltools-trino-driver/issues"
+    "url": "https://github.com/combineads/sqltools-presto-driver/issues"
   },
   "scripts": {
     "clean": "rimraf -rf out *.vsix",
@@ -29,11 +29,11 @@
     "watch": "tsc -watch -p ./"
   },
   "keywords": [
-    "Trino",
-    "Trinodb",
-    "trino",
-    "trino-driver",
-    "trinodb",
+    "Presto",
+    "Prestodb",
+    "presto",
+    "presto-driver",
+    "prestodb",
     "sqltools-driver"
   ],
   "categories": [
@@ -54,7 +54,7 @@
   "dependencies": {
     "@sqltools/base-driver": "latest",
     "@sqltools/types": "latest",
-    "trino-client": "^0.2.1",
+    "presto-client": "^1.1.0",
     "uuid": "^11.0.3"
   },
   "devDependencies": {
